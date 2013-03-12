@@ -7,11 +7,6 @@
 static IV PerlIOHttp_pushed(pTHX_ PerlIO *f, const char *mode, SV *arg, PerlIO_funcs *tab) {
 	if (!PerlIOValid(f)) {
 		SETERRNO(EBADF, SS_IVCHAN);
-		return -1;
-	}
-	else if (!arg || !SvOK(arg)) {
-		SETERRNO(EINVAL, LIB_INVARG);
-		return -1;
 	}
 	else {
 		SETERRNO(EINVAL, LIB_INVARG);
@@ -35,6 +30,7 @@ SV* S_get_tiny(pTHX_ size_t narg, SV** args) {
 	if (!cnt)
 		return NULL;
 	SPAGAIN;
+	EXTEND(SP, narg);
 	for (i = 0; i < narg; ++i)
 		PUSHs(args[i]);
 	PUTBACK;
@@ -54,13 +50,18 @@ static PerlIO* PerlIOHttp_open(pTHX_ PerlIO_funcs *self, PerlIO_list_t *layers, 
 		SETERRNO(EINVAL, LIB_INVARG);
 		return NULL;
 	}
+	if (mode[0] != 'r' || mode[1] == '+') {
+		Perl_warn(aTHX_ "Only reading is supported for HTTP");
+		SETERRNO(EINVAL, LIB_INVARG);
+		return NULL;
+	}
 	tiny = get_tiny(narg, args);
 	if (!tiny) {
 		errno = EIO;
 		return NULL;
 	}
 	if (SvTRUE(*hv_fetchs((HV*)SvRV(tiny), "success", 0))) {
-		SV* tmp = newRV_noinc(*hv_fetchs((HV*)SvRV(tiny), "content", 0));
+		SV* tmp = sv_2mortal(newRV_inc(*hv_fetchs((HV*)SvRV(tiny), "content", 0)));
 		return PerlIO_openn(aTHX_ ":", mode, fd, imode, perm, old, 1, &tmp);
 	}
 	else {
@@ -85,6 +86,9 @@ static PerlIO* PerlIOHttp_open(pTHX_ PerlIO_funcs *self, PerlIO_list_t *layers, 
 			case 598:
 				errno = ETIMEDOUT;
 				break;
+			case 599:
+				Perl_warn(aTHX_ "%s", SvPV_nolen(*hv_fetchs((HV*)SvRV(tiny), "content", 0)));
+				/* fallthrough */
 			case 500:
 			default:
 				errno = EIO;
