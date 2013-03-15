@@ -10,7 +10,8 @@ static IV PerlIOHttp_pushed(pTHX_ PerlIO *f, const char *mode, SV *arg, PerlIO_f
 	}
 	else {
 		SETERRNO(EINVAL, LIB_INVARG);
-		Perl_warn(aTHX_ "Can't push :http on existing handle");
+		if (ckWARN(WARN_LAYER))
+			Perl_warn(aTHX_ "Can't push :http on existing handle");
 	}
 	return -1;
 }
@@ -21,9 +22,9 @@ SV* S_get_tiny(pTHX_ size_t narg, SV** args) {
 	dSP;
 
 	ENTER;
-	EXTEND(SP, 2);
 	PUSHMARK(SP);
 	PUSHMARK(SP);
+	EXTEND(SP, 1);
 	mPUSHp("HTTP::Tiny", 10);
 	PUTBACK;
 	cnt = call_method("new", G_SCALAR | G_EVAL);
@@ -50,8 +51,9 @@ static PerlIO* PerlIOHttp_open(pTHX_ PerlIO_funcs *self, PerlIO_list_t *layers, 
 		SETERRNO(EINVAL, LIB_INVARG);
 		return NULL;
 	}
-	if (mode[0] != 'r' || mode[1] == '+') {
-		Perl_warn(aTHX_ "Only reading is supported for HTTP");
+	if (mode[0] != 'r' || strchr(mode + 1, '+')) {
+		if (ckWARN(WARN_IO))
+			Perl_warn(aTHX_ "Only reading is supported for HTTP");
 		SETERRNO(EINVAL, LIB_INVARG);
 		return NULL;
 	}
@@ -62,7 +64,7 @@ static PerlIO* PerlIOHttp_open(pTHX_ PerlIO_funcs *self, PerlIO_list_t *layers, 
 	}
 	if (SvTRUE(*hv_fetchs((HV*)SvRV(tiny), "success", 0))) {
 		SV* tmp = sv_2mortal(newRV_inc(*hv_fetchs((HV*)SvRV(tiny), "content", 0)));
-		return PerlIO_openn(aTHX_ ":", mode, fd, imode, perm, old, 1, &tmp);
+		return PerlIO_openn(aTHX_ ":", mode, -1, imode, perm, old, 1, &tmp);
 	}
 	else {
 		switch (SvIV(*hv_fetchs((HV*)SvRV(tiny), "status", 0))) {
@@ -87,7 +89,8 @@ static PerlIO* PerlIOHttp_open(pTHX_ PerlIO_funcs *self, PerlIO_list_t *layers, 
 				errno = ETIMEDOUT;
 				break;
 			case 599:
-				Perl_warn(aTHX_ "%s", SvPV_nolen(*hv_fetchs((HV*)SvRV(tiny), "content", 0)));
+				if (ckWARN(WARN_IO))
+					Perl_warn(aTHX_ "%s", SvPV_nolen(*hv_fetchs((HV*)SvRV(tiny), "content", 0)));
 				/* fallthrough */
 			case 500:
 			default:
