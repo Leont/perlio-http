@@ -22,7 +22,7 @@ This layer enables one to read a file from the internet.
 
 =head1 SYNTAX
 
-This modules does not have to be loaded explicitly, it will be loaded automatically by using it in an open mode. The layer does not take any argument.
+This module does not have to be loaded explicitly, it will be loaded automatically by using it in an open mode. The layer does not take any argument.
 
 =head1 PHILOSPHY
 
@@ -31,5 +31,19 @@ This modules tried to Do The Right Thing™. HTTP errors are translated as faith
 =head1 RATIONALE
 
 This module is mostly meant as a proof of concept. It currently does not support writing in an way, and may never support it.
+
+=head1 SEE ALSO
+
+=over 4
+
+=item * HTTP::Tiny
+
+This module is just a thin but pretty wrapper around HTTP::Tiny.
+
+=item * IO::Callback::HTTP
+
+A pure-perl module that supports read-write handles using ties and a non-open() interface.
+
+=back
 
 =cut
