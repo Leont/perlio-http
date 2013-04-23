@@ -4,4 +4,4 @@ Revision history for PerlIO-http
           Define ETIMEDOUT for Windows
 
 0.001     2013-03-16 01:14:34 Europe/Amsterdam
-    -
+          Initial release
