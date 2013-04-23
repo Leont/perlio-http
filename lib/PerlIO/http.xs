@@ -4,6 +4,10 @@
 #include "XSUB.h"
 #include "perliol.h"
 
+#ifndef ETIMEDOUT
+#define ETIMEDOUT EIO
+#endif
+
 static IV PerlIOHttp_pushed(pTHX_ PerlIO *f, const char *mode, SV *arg, PerlIO_funcs *tab) {
 	if (!PerlIOValid(f)) {
 		SETERRNO(EBADF, SS_IVCHAN);
