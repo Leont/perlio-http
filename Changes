@@ -1,6 +1,7 @@
 Revision history for PerlIO-http
 
 {{$NEXT}}
+          Fix compilation issue on non-threaded perls
 
 0.003     2017-07-07 15:49:26+02:00 Europe/Amsterdam
           Stop using unexported symbols
